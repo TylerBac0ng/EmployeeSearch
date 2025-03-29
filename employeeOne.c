@@ -1,67 +1,65 @@
-#include <stdio.h>
 #include <string.h>
+#include "employee.h"
 
-// Define our Employee struct 
-typedef struct {
-	long number;        
-	char name[50];      
-	char phone[20];    
-	double salary;      
-} Employee;
+PtrToEmployee searchEmployeeByNumber(PtrToConstEmployee ptr, int tableSize, long targetNumber) {
+	const PtrToConstEmployee endPtr = ptr + tableSize;
 
-// Create a global array of Employees + a global integer counting them
-Employee employees[] = {
-	{1001, "Tyler Bacong", "626-123-2134", 8.78},
-	{1011, "Umar Azizadah",  "989-555-5555", 9.50},
-	{1140, "Julian Alfonso",   "888-888-8888", 8.32},
-	{1241, "Allison Nguyen",     "213-546-9867", 6.47},
-	{5045, "Nima Davarpanah",    "111-222-3333", 8.32}
-};
-int employeesSize = sizeof(employees) / sizeof(employees[0]);
+	for (; ptr < endPtr; ptr++) {
+		if (ptr->number == targetNumber)
+			return (PtrToEmployee) ptr;
+	}
 
+	return NULL;
+}
 
-// Generic search function using a function pointer for comparisons
-// Return pointer to matching Employee or NULL if not found
+PtrToEmployee searchEmployeeByName(PtrToConstEmployee ptr, int tableSize, char *targetName) {
+	const PtrToConstEmployee endPtr = ptr + tableSize;
 
-static Employee *searchEmployeeTable(
-	const Employee *startPtr,
+	for (; ptr < endPtr; ptr++) {
+		if (strcmp(ptr->name, targetName) == 0)
+			return (PtrToEmployee) ptr;
+	}
+
+	return NULL;
+}
+
+static PtrToEmployee searchEmployeeTable(
+	PtrToConstEmployee ptr,
 	int size,
 	const void *targetPtr,
-	int (*compareFn)(const void *, const Employee *)
+	int (*compareFn)(const void *, PtrToConstEmployee)
 ) {
-	for (int i = 0; i < size; i++) {
-		if (compareFn(targetPtr, &startPtr[i]) == 0) {
-			// “0” means a match
-			return (Employee *)&startPtr[i];  // cast away const
-		}
+	const PtrToConstEmployee endPtr = ptr + size;
+
+	for (; ptr < endPtr; ptr++) {
+		if (compareFn(targetPtr, ptr) == 0)
+			return (PtrToEmployee) ptr;
 	}
-	return NULL; // no match
+
+	return NULL;
 }
 
-// Comparison functions for phone & salary
-
-static int compareEmployeePhone(const void *targetPtr, const Employee *emp) {
-	// targetPtr is "const char *" (the phone to find)
-	const char *phoneToFind = (const char *)targetPtr;
-	return strcmp(phoneToFind, emp->phone);
+// Comparison function for phone number 
+static int comparePhone(const void *targetPtr, PtrToConstEmployee employee) {
+	const char *targetPhone = (const char *)targetPtr;
+	return strcmp(targetPhone, employee->phone);
 }
 
-static int compareEmployeeSalary(const void *targetPtr, const Employee *emp) {
-	//implement later
+// Comparison function for salary 
+static int compareSalary(const void *targetPtr, PtrToConstEmployee employee) {
+	double targetSalary = *(const double *)targetPtr;
+
+	if (targetSalary < employee->salary) return -1;
+	if (targetSalary > employee->salary) return 1;
+	return 0;
 }
 
-// public search functions for phone & salary (using function pointers)
-
-Employee *searchEmployeeByPhone(const char *phoneToFind) {
-	return searchEmployeeTable(
-		employees, 
-		employeesSize, 
-		phoneToFind, 
-		compareEmployeePhone
-	);
+// Search by phone — uses function pointer to comparePhone()
+PtrToEmployee searchEmployeeByPhone(PtrToConstEmployee ptr, int size, char *targetPhone) {
+	return searchEmployeeTable(ptr, size, targetPhone, comparePhone);
 }
 
-Employee *searchEmployeeBySalary(double salaryToFind) {
-	//implement later
+// Search by salary — uses function pointer to compareSalary()
+PtrToEmployee searchEmployeeBySalary(PtrToConstEmployee ptr, int size, double targetSalary) {
+	return searchEmployeeTable(ptr, size, &targetSalary, compareSalary);
 }
-
